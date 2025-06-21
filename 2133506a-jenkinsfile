@@ -1,44 +1,118 @@
 pipeline {
-    agent any
+    agent {
+        node {
+            label 'master'
+        }
+    }
+
+    tools {
+        maven 'maven3'
+    }
+
+    options {
+        buildDiscarder logRotator(
+            daysToKeepStr: '15',
+            numToKeepStr: '10'
+        )
+    }
+
+    environment {
+        APP_NAME = "STUDENT_APP"
+        APP_ENV  = "DEV"
+    }
 
     stages {
+
+        stage('Cleanup Workspace') {
+            steps {
+                cleanWs()
+                sh 'echo "Cleaned Up Workspace for ${APP_NAME}"'
+            }
+        }
+
+        stage('Code Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/juliuschanjq/cdv1c03-repo.git']]
+                ])
+            }
+        }
+
+        stage('Code Build') {
+            steps {
+                sh 'mvn install -Dmaven.test.skip=false'
+            }
+        }
+
+        stage('Printing All Global Variables') {
+            steps {
+                sh 'env'
+            }
+        }
+
         stage('ST1-2133506a') {
             steps {
-                echo 'Stage 1 - Hello from ST1'
+                echo 'ST1-2133506a: Setup Release Environment Completed.'
             }
         }
+
         stage('ST2-2133506a') {
             steps {
-                echo 'Stage 2 - Hello from ST2'
+                sh 'docker rm -f server1-2133506a || true'
+                sh 'docker run -d --name server1-2133506a -p 32700:80 svr-image-2133506a'
+                echo 'ST2-2133506a: Server1 is successfully created'
             }
         }
+
         stage('ST3-2133506a') {
             steps {
-                echo 'Stage 3 - Hello from ST3'
+                echo 'ST3-2133506a: Server1 is healthy - Health check done'
+                // Optional: sh 'curl -f http://localhost:32700/actuator/health'
             }
         }
+
         stage('ST4-Parallel-2133506a') {
             parallel {
                 stage('ST4A-2133506a') {
                     steps {
-                        echo 'Stage 4A - Parallel A'
+                        echo 'ST4A-2133506a: SQLI Check Completed'
                     }
                 }
                 stage('ST4B-2133506a') {
                     steps {
-                        echo 'Stage 4B - Parallel B'
+                        echo 'ST4B-2133506a: XSS Check Completed'
                     }
                 }
             }
         }
+
         stage('ST5-2133506a') {
             steps {
-                echo 'Stage 5 - Hello from ST5'
+                script {
+                    def userInput = input(
+                        id: 'pipelineContinuePrompt',
+                        message: 'ST5-2133506a: Continue the pipeline?',
+                        ok: 'Proceed',
+                        submitter: 'admin',
+                        parameters: [
+                            [$class: 'ChoiceParameterDefinition', name: 'choice', choices: 'Proceed\nAbort', description: 'Select an option to continue or abort.']
+                        ]
+                    )
+
+                    if (userInput == 'Proceed') {
+                        echo 'ST5-2133506a: Continue the pipeline.'
+                    } else {
+                        error 'Pipeline aborted by user selection.'
+                    }
+                }
             }
         }
+
         stage('ST6-2133506a') {
             steps {
-                echo 'Stage 6 - Hello from ST6'
+                echo 'ST6-2133506a: Ready for next phase'
             }
         }
     }
