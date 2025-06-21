@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('ST1-2133506a') {
+            steps {
+                echo 'Stage 1 - Hello from ST1'
+            }
+        }
+        stage('ST2-2133506a') {
+            steps {
+                echo 'Stage 2 - Hello from ST2'
+            }
+        }
+        stage('ST3-2133506a') {
+            steps {
+                echo 'Stage 3 - Hello from ST3'
+            }
+        }
+        stage('ST4-Parallel-2133506a') {
+            parallel {
+                stage('ST4A-2133506a') {
+                    steps {
+                        echo 'Stage 4A - Parallel A'
+                    }
+                }
+                stage('ST4B-2133506a') {
+                    steps {
+                        echo 'Stage 4B - Parallel B'
+                    }
+                }
+            }
+        }
+        stage('ST5-2133506a') {
+            steps {
+                echo 'Stage 5 - Hello from ST5'
+            }
+        }
+        stage('ST6-2133506a') {
+            steps {
+                echo 'Stage 6 - Hello from ST6'
+            }
+        }
+    }
+}
