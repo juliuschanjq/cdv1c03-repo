@@ -4,7 +4,7 @@ pipeline {
             label 'master'
         }
     }
-
+    
     tools {
         maven 'maven3'
     }
@@ -22,7 +22,6 @@ pipeline {
     }
 
     stages {
-
         stage('Cleanup Workspace') {
             steps {
                 cleanWs()
@@ -69,7 +68,6 @@ pipeline {
         stage('ST3-2133506a') {
             steps {
                 echo 'ST3-2133506a: Server1 is healthy - Health check done'
-                // Optional: sh 'curl -f http://localhost:32700/actuator/health'
             }
         }
 
@@ -93,7 +91,7 @@ pipeline {
                 script {
                     def userInput = input(
                         id: 'pipelineContinuePrompt',
-                        message: 'ST5-2133506a: Continue the pipeline?',
+                        message: 'Continue the pipeline?',
                         ok: 'Proceed',
                         submitter: 'admin',
                         parameters: [
