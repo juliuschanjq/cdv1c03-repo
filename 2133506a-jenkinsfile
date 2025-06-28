@@ -43,13 +43,21 @@ pipeline {
             }
         }
 
-        // Stage 5: Manual Approval
+        // Stage 5: Manual Approval (Fixed Syntax)
         stage('ST5-2133506a') {
             steps {
                 script {
                     def choice = input(
                         message: 'Continue the pipeline?',
-                        parameters: [choice(name: 'Action', choices: ['Proceed', 'Abort'])]
+                        ok: 'Proceed',
+                        parameters: [
+                            choice(
+                                name: 'ACTION',
+                                choices: ['Proceed', 'Abort'],
+                                description: 'Continue or abort the pipeline'
+                            )
+                        ]
+                    )
                     if (choice == 'Abort') {
                         error 'Pipeline aborted by user'
                     }
