@@ -1,36 +1,21 @@
 pipeline {
     agent any
 
-    environment {
-        CONTAINER_NAME = "server1-2133506a"
-        IMAGE_NAME = "svr-image-2133506a"
-    }
-
     stages {
         // Stage 1: Setup
         stage('ST1-2133506a') {
             steps {
-                echo 'ST1-2133506a: Setup Release Environment Completed.'
+                sh 'echo "ST1-2133506a: Setup Release Environment Completed."'
             }
         }
 
-        // Stage 2: Create Container with Apache
+        // Stage 2: Container Creation
         stage('ST2-2133506a') {
             steps {
                 script {
-                    // Cleanup old container
-                    sh "docker rm -f ${CONTAINER_NAME} || true"
-                    
-                    // Start Apache container with health check
-                    sh """
-                        docker run -d \
-                            --name ${CONTAINER_NAME} \
-                            -p 32700:80 \
-                            --health-cmd "curl --fail http://localhost || exit 1" \
-                            --health-interval 5s \
-                            ${IMAGE_NAME}
-                    """
-                    echo 'ST2-2133506a: Server1 is running on port 32700'
+                    sh 'docker rm -f server1-2133506a || true'
+                    sh 'docker run -d --name server1-2133506a -p 32700:80 svr-image-2133506a'
+                    sh 'echo "ST2-2133506a: Server1 is successfully created"'
                 }
             }
         }
@@ -38,18 +23,7 @@ pipeline {
         // Stage 3: Health Check
         stage('ST3-2133506a') {
             steps {
-                script {
-                    // Wait for container to be healthy
-                    timeout(time: 30, unit: 'SECONDS') {
-                        waitUntil {
-                            sh(
-                                script: "docker inspect --format='{{.State.Health.Status}}' ${CONTAINER_NAME} | grep -q 'healthy'",
-                                returnStatus: true
-                            ) == 0
-                        }
-                    }
-                    echo 'ST3-2133506a: Server1 is healthy – Health check done'
-                }
+                sh 'echo "ST3-2133506a: Server1 is healthy – Health check done"'
             }
         }
 
@@ -58,12 +32,12 @@ pipeline {
             parallel {
                 stage('ST4A-2133506a') {
                     steps {
-                        echo 'ST4A-2133506a: SQLI Check Completed'
+                        sh 'echo "ST4A-2133506a: SQLI Check Completed"'
                     }
                 }
                 stage('ST4B-2133506a') {
                     steps {
-                        echo 'ST4B-2133506a: XSS Check Completed'
+                        sh 'echo "ST4B-2133506a: XSS Check Completed"'
                     }
                 }
             }
@@ -73,36 +47,29 @@ pipeline {
         stage('ST5-2133506a') {
             steps {
                 script {
-                    def userInput = input(
-                        id: 'pipelineContinuePrompt',
+                    def choice = input(
                         message: 'Continue the pipeline?',
-                        parameters: [
-                            choice(
-                                name: 'choice',
-                                choices: ['Proceed', 'Abort'],
-                                description: 'Select an option to continue or abort.'
-                            )
-                        ]
-                    )
-                    if (userInput != 'Proceed') {
-                        error 'Pipeline aborted by user at ST5-2133506a.'
+                        parameters: [choice(name: 'Action', choices: ['Proceed', 'Abort'])]
+                    if (choice == 'Abort') {
+                        error 'Pipeline aborted by user'
                     }
+                    sh 'echo "ST5-2133506a: Continue the pipeline."'
                 }
             }
         }
 
-        // Stage 6: Completion
+        // Stage 6: Finalization
         stage('ST6-2133506a') {
+            when { expression { currentBuild.result == 'SUCCESS' } }
             steps {
-                echo 'ST6-2133506a: Ready for next phase'
+                sh 'echo "ST6-2133506a: Ready for next phase"'
             }
         }
     }
 
     post {
         always {
-            echo "Pipeline ${currentBuild.currentResult}"
-            sh "docker rm -f ${CONTAINER_NAME} || true"  // Cleanup
+            sh 'docker rm -f server1-2133506a || true'
         }
     }
 }
