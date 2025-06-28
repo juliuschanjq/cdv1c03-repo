@@ -7,28 +7,39 @@ pipeline {
     }
 
     stages {
-        // Stage 1
+        // Stage 1: Setup
         stage('ST1-2133506a') {
             steps {
                 echo 'ST1-2133506a: Setup Release Environment Completed.'
             }
         }
 
-        // Stage 2
+        // Stage 2: Create Container with Apache
         stage('ST2-2133506a') {
             steps {
                 script {
+                    // Cleanup old container
                     sh "docker rm -f ${CONTAINER_NAME} || true"
-                    sh "docker run -d --name ${CONTAINER_NAME} -p 32700:80 ${IMAGE_NAME}"
-                    echo 'ST2-2133506a: Server1 is successfully created'
+                    
+                    // Start Apache container with health check
+                    sh """
+                        docker run -d \
+                            --name ${CONTAINER_NAME} \
+                            -p 32700:80 \
+                            --health-cmd "curl --fail http://localhost || exit 1" \
+                            --health-interval 5s \
+                            ${IMAGE_NAME}
+                    """
+                    echo 'ST2-2133506a: Server1 is running on port 32700'
                 }
             }
         }
 
-        // Stage 3
+        // Stage 3: Health Check
         stage('ST3-2133506a') {
             steps {
                 script {
+                    // Wait for container to be healthy
                     timeout(time: 30, unit: 'SECONDS') {
                         waitUntil {
                             sh(
@@ -42,7 +53,7 @@ pipeline {
             }
         }
 
-        // Stage 4 (Parallel)
+        // Stage 4: Parallel Security Checks
         stage('ST4-Parallel-2133506a') {
             parallel {
                 stage('ST4A-2133506a') {
@@ -58,7 +69,7 @@ pipeline {
             }
         }
 
-        // Stage 5
+        // Stage 5: Manual Approval
         stage('ST5-2133506a') {
             steps {
                 script {
@@ -80,7 +91,7 @@ pipeline {
             }
         }
 
-        // Stage 6
+        // Stage 6: Completion
         stage('ST6-2133506a') {
             steps {
                 echo 'ST6-2133506a: Ready for next phase'
@@ -91,7 +102,7 @@ pipeline {
     post {
         always {
             echo "Pipeline ${currentBuild.currentResult}"
-            sh "docker rm -f ${CONTAINER_NAME} || true"
+            sh "docker rm -f ${CONTAINER_NAME} || true"  // Cleanup
         }
     }
 }
