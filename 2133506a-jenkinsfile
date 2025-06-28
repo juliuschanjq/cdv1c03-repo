@@ -84,9 +84,12 @@ EOF
         }
 
         stage('ST6-2133506a') {
-            when { expression { currentBuild.result == 'SUCCESS' } }
             steps {
-                sh 'echo "ST6-2133506a: Ready for next phase"'
+                script {
+                    if (currentBuild.currentResult == 'SUCCESS') {
+                        sh 'echo "ST6-2133506a: Ready for next phase"'
+                    }
+                }
             }
         }
     }
