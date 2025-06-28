@@ -1,33 +1,32 @@
 pipeline {
-    agent any  // Use any available agent (or 'master' if required)
+    agent any
 
     environment {
-        POLITE_ID = "2133506a"  
-        CONTAINER_NAME = "server1-${POLITE_ID}"
-        IMAGE_NAME = "svr-image-${POLITE_ID}"
+        CONTAINER_NAME = "server1-2133506a"
+        IMAGE_NAME = "svr-image-2133506a"
     }
 
     stages {
-        // Stage 1: Setup Release Environment
-        stage("ST1-${POLITE_ID}") {
+        // Stage 1
+        stage('ST1-2133506a') {
             steps {
-                echo "ST1-${POLITE_ID}: Setup Release Environment Completed."
+                echo 'ST1-2133506a: Setup Release Environment Completed.'
             }
         }
 
-        // Stage 2: Create and Run Container
-        stage("ST2-${POLITE_ID}") {
+        // Stage 2
+        stage('ST2-2133506a') {
             steps {
                 script {
-                    sh "docker rm -f ${CONTAINER_NAME} || true"  // Remove old container
+                    sh "docker rm -f ${CONTAINER_NAME} || true"
                     sh "docker run -d --name ${CONTAINER_NAME} -p 32700:80 ${IMAGE_NAME}"
-                    echo "ST2-${POLITE_ID}: Server1 is successfully created"
+                    echo 'ST2-2133506a: Server1 is successfully created'
                 }
             }
         }
 
-        // Stage 3: Health Check
-        stage("ST3-${POLITE_ID}") {
+        // Stage 3
+        stage('ST3-2133506a') {
             steps {
                 script {
                     timeout(time: 30, unit: 'SECONDS') {
@@ -38,29 +37,29 @@ pipeline {
                             ) == 0
                         }
                     }
-                    echo "ST3-${POLITE_ID}: Server1 is healthy – Health check done"
+                    echo 'ST3-2133506a: Server1 is healthy – Health check done'
                 }
             }
         }
 
-        // Stage 4: Parallel Security Checks
-        stage("ST4-Parallel-${POLITE_ID}") {
+        // Stage 4 (Parallel)
+        stage('ST4-Parallel-2133506a') {
             parallel {
-                stage("ST4A-${POLITE_ID}") {
+                stage('ST4A-2133506a') {
                     steps {
-                        echo "ST4A-${POLITE_ID}: SQLI Check Completed"
+                        echo 'ST4A-2133506a: SQLI Check Completed'
                     }
                 }
-                stage("ST4B-${POLITE_ID}") {
+                stage('ST4B-2133506a') {
                     steps {
-                        echo "ST4B-${POLITE_ID}: XSS Check Completed"
+                        echo 'ST4B-2133506a: XSS Check Completed'
                     }
                 }
             }
         }
 
-        // Stage 5: Manual Approval
-        stage("ST5-${POLITE_ID}") {
+        // Stage 5
+        stage('ST5-2133506a') {
             steps {
                 script {
                     def userInput = input(
@@ -75,16 +74,16 @@ pipeline {
                         ]
                     )
                     if (userInput != 'Proceed') {
-                        error "Pipeline aborted by user at ST5-${POLITE_ID}."
+                        error 'Pipeline aborted by user at ST5-2133506a.'
                     }
                 }
             }
         }
 
-        // Stage 6: Finalization
-        stage("ST6-${POLITE_ID}") {
+        // Stage 6
+        stage('ST6-2133506a') {
             steps {
-                echo "ST6-${POLITE_ID}: Ready for next phase"
+                echo 'ST6-2133506a: Ready for next phase'
             }
         }
     }
@@ -92,7 +91,7 @@ pipeline {
     post {
         always {
             echo "Pipeline ${currentBuild.currentResult}"
-            sh "docker rm -f ${CONTAINER_NAME} || true"  // Cleanup container
+            sh "docker rm -f ${CONTAINER_NAME} || true"
         }
     }
 }
