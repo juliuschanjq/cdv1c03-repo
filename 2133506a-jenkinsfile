@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     stages {
-        // Stage 1: Setup
+        // Stage 1
         stage('ST1-2133506a') {
             steps {
                 sh 'echo "ST1-2133506a: Setup Release Environment Completed."'
             }
         }
 
-        // Stage 2: Container Creation
+        // Stage 2
         stage('ST2-2133506a') {
             steps {
                 script {
@@ -20,18 +20,19 @@ pipeline {
             }
         }
 
-        // Stage 3: Health Check
+        // Stage 3
         stage('ST3-2133506a') {
             steps {
                 sh 'echo "ST3-2133506a: Server1 is healthy – Health check done"'
             }
         }
 
-        // Stage 4: Parallel Security Checks
+        // Stage 4 (Parallel)
         stage('ST4-Parallel-2133506a') {
             parallel {
                 stage('ST4A-2133506a') {
                     steps {
+                        sh 'echo "ST4-Parallel-2133506a: Security Scrutinises"'
                         sh 'echo "ST4A-2133506a: SQLI Check Completed"'
                     }
                 }
@@ -43,22 +44,18 @@ pipeline {
             }
         }
 
-        // Stage 5: Manual Approval (Fixed Syntax)
+        // Stage 5
         stage('ST5-2133506a') {
             steps {
                 script {
-                    def choice = input(
+                    def proceed = input(
                         message: 'Continue the pipeline?',
                         ok: 'Proceed',
                         parameters: [
-                            choice(
-                                name: 'ACTION',
-                                choices: ['Proceed', 'Abort'],
-                                description: 'Continue or abort the pipeline'
-                            )
+                            choice(name: 'choice', choices: ['Proceed', 'Abort'])
                         ]
                     )
-                    if (choice == 'Abort') {
+                    if (proceed == 'Abort') {
                         error 'Pipeline aborted by user'
                     }
                     sh 'echo "ST5-2133506a: Continue the pipeline."'
@@ -66,7 +63,7 @@ pipeline {
             }
         }
 
-        // Stage 6: Finalization
+        // Stage 6
         stage('ST6-2133506a') {
             when { expression { currentBuild.result == 'SUCCESS' } }
             steps {
