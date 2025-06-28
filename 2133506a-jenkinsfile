@@ -9,8 +9,8 @@ pipeline {
                         if ! docker images | grep -q svr-image-2133506a; then
                             docker build -t svr-image-2133506a - <<EOF
 FROM ubuntu:18.04
-RUN apt-get update && \\
-    apt-get install -y apache2 && \\
+RUN apt-get update && \
+    apt-get install -y apache2 curl && \
     apt-get clean
 EXPOSE 80
 CMD ["apache2ctl", "-D", "FOREGROUND"]
@@ -37,7 +37,11 @@ EOF
                 script {
                     timeout(time: 30, unit: 'SECONDS') {
                         waitUntil {
-                            sh 'curl --fail http://localhost:32700 >/dev/null 2>&1'
+                            def status = sh(
+                                script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost:32700',
+                                returnStdout: true
+                            ).trim()
+                            return status == "200"
                         }
                     }
                     sh 'echo "ST3-2133506a: Server1 is healthy – Health check done"'
