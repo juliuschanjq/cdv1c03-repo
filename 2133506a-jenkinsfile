@@ -4,7 +4,7 @@ pipeline {
             label 'master'
         }
     }
-    
+
     tools {
         maven 'maven3'
     }
@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Printing All Global Variables') {
+        stage('Print Global Variables') {
             steps {
                 sh 'env'
             }
@@ -59,15 +59,18 @@ pipeline {
 
         stage('ST2-2133506a') {
             steps {
-                sh 'docker rm -f server1-2133506a || true'
-                sh 'docker run -d --name server1-2133506a -p 32700:80 svr-image-2133506a'
+                echo 'ST2-2133506a: Creating server1-2133506a from svr-image-2133506a'
+                sh '''
+                    docker rm -f server1-2133506a || true
+                    docker run -d --name server1-2133506a -p 32700:80 svr-image-2133506a
+                '''
                 echo 'ST2-2133506a: Server1 is successfully created'
             }
         }
 
         stage('ST3-2133506a') {
             steps {
-                echo 'ST3-2133506a: Server1 is healthy - Health check done'
+                echo 'ST3-2133506a: Server1 is healthy – Health check done'
             }
         }
 
@@ -93,14 +96,14 @@ pipeline {
                         id: 'pipelineContinuePrompt',
                         message: 'Continue the pipeline?',
                         ok: 'Proceed',
-                        submitter: 'admin',
                         parameters: [
-                            [$class: 'ChoiceParameterDefinition', name: 'choice', choices: 'Proceed\nAbort', description: 'Select an option to continue or abort.']
+                            choice(name: 'choice', choices: ['Proceed', 'Abort'], description: 'Select an option to continue or abort.')
                         ]
                     )
 
                     if (userInput == 'Proceed') {
                         echo 'ST5-2133506a: Continue the pipeline.'
+                        currentBuild.description = "User chose to proceed"
                     } else {
                         error 'Pipeline aborted by user selection.'
                     }
@@ -109,6 +112,12 @@ pipeline {
         }
 
         stage('ST6-2133506a') {
+            when {
+                expression {
+                    // Check if user chose "Proceed" in Stage 5
+                    return currentBuild.rawBuild.getAction(org.jenkinsci.plugins.workflow.support.steps.input.InputAction)?.executions?.get(0)?.getOutcome()?.getValue() == 'Proceed'
+                }
+            }
             steps {
                 echo 'ST6-2133506a: Ready for next phase'
             }
