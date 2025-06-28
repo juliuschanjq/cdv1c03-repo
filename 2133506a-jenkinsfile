@@ -8,13 +8,13 @@ pipeline {
                     sh '''
                         if ! docker images | grep -q svr-image-2133506a; then
                             docker build -t svr-image-2133506a - <<EOF
-                            FROM ubuntu:18.04
-                            RUN apt-get update && \
-                                apt-get install -y apache2 && \
-                                apt-get clean
-                            EXPOSE 80
-                            CMD ["apache2ctl", "-D", "FOREGROUND"]
-                            EOF
+FROM ubuntu:18.04
+RUN apt-get update && \\
+    apt-get install -y apache2 && \\
+    apt-get clean
+EXPOSE 80
+CMD ["apache2ctl", "-D", "FOREGROUND"]
+EOF
                         fi
                     '''
                     sh 'echo "ST1-2133506a: Setup Release Environment Completed."'
