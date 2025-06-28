@@ -2,14 +2,26 @@ pipeline {
     agent any
 
     stages {
-        // Stage 1
         stage('ST1-2133506a') {
             steps {
-                sh 'echo "ST1-2133506a: Setup Release Environment Completed."'
+                script {
+                    sh '''
+                        if ! docker images | grep -q svr-image-2133506a; then
+                            docker build -t svr-image-2133506a - <<EOF
+                            FROM ubuntu:18.04
+                            RUN apt-get update && \
+                                apt-get install -y apache2 && \
+                                apt-get clean
+                            EXPOSE 80
+                            CMD ["apache2ctl", "-D", "FOREGROUND"]
+                            EOF
+                        fi
+                    '''
+                    sh 'echo "ST1-2133506a: Setup Release Environment Completed."'
+                }
             }
         }
 
-        // Stage 2
         stage('ST2-2133506a') {
             steps {
                 script {
@@ -20,14 +32,19 @@ pipeline {
             }
         }
 
-        // Stage 3
         stage('ST3-2133506a') {
             steps {
-                sh 'echo "ST3-2133506a: Server1 is healthy – Health check done"'
+                script {
+                    timeout(time: 30, unit: 'SECONDS') {
+                        waitUntil {
+                            sh 'curl --fail http://localhost:32700 >/dev/null 2>&1'
+                        }
+                    }
+                    sh 'echo "ST3-2133506a: Server1 is healthy – Health check done"'
+                }
             }
         }
 
-        // Stage 4 (Parallel)
         stage('ST4-Parallel-2133506a') {
             parallel {
                 stage('ST4A-2133506a') {
@@ -44,7 +61,6 @@ pipeline {
             }
         }
 
-        // Stage 5
         stage('ST5-2133506a') {
             steps {
                 script {
@@ -63,7 +79,6 @@ pipeline {
             }
         }
 
-        // Stage 6
         stage('ST6-2133506a') {
             when { expression { currentBuild.result == 'SUCCESS' } }
             steps {
