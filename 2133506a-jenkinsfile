@@ -1,126 +1,98 @@
 pipeline {
-    agent {
-        node {
-            label 'master'
-        }
-    }
-
-    tools {
-        maven 'maven3'
-    }
-
-    options {
-        buildDiscarder logRotator(
-            daysToKeepStr: '15',
-            numToKeepStr: '10'
-        )
-    }
+    agent any  // Use any available agent (or 'master' if required)
 
     environment {
-        APP_NAME = "STUDENT_APP"
-        APP_ENV  = "DEV"
+        POLITE_ID = "2133506a"  
+        CONTAINER_NAME = "server1-${POLITE_ID}"
+        IMAGE_NAME = "svr-image-${POLITE_ID}"
     }
 
     stages {
-        stage('Cleanup Workspace') {
+        // Stage 1: Setup Release Environment
+        stage("ST1-${POLITE_ID}") {
             steps {
-                cleanWs()
-                sh 'echo "Cleaned Up Workspace for ${APP_NAME}"'
+                echo "ST1-${POLITE_ID}: Setup Release Environment Completed."
             }
         }
 
-        stage('Code Checkout') {
+        // Stage 2: Create and Run Container
+        stage("ST2-${POLITE_ID}") {
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[url: 'https://github.com/juliuschanjq/cdv1c03-repo.git']]
-                ])
+                script {
+                    sh "docker rm -f ${CONTAINER_NAME} || true"  // Remove old container
+                    sh "docker run -d --name ${CONTAINER_NAME} -p 32700:80 ${IMAGE_NAME}"
+                    echo "ST2-${POLITE_ID}: Server1 is successfully created"
+                }
             }
         }
 
-        stage('Code Build') {
+        // Stage 3: Health Check
+        stage("ST3-${POLITE_ID}") {
             steps {
-                sh 'mvn install -Dmaven.test.skip=false'
+                script {
+                    timeout(time: 30, unit: 'SECONDS') {
+                        waitUntil {
+                            sh(
+                                script: "docker inspect --format='{{.State.Health.Status}}' ${CONTAINER_NAME} | grep -q 'healthy'",
+                                returnStatus: true
+                            ) == 0
+                        }
+                    }
+                    echo "ST3-${POLITE_ID}: Server1 is healthy – Health check done"
+                }
             }
         }
 
-        stage('Print Global Variables') {
-            steps {
-                sh 'env'
-            }
-        }
-
-        stage('ST1-2133506a') {
-            steps {
-                echo 'ST1-2133506a: Setup Release Environment Completed.'
-            }
-        }
-
-        stage('ST2-2133506a') {
-            steps {
-                echo 'ST2-2133506a: Creating server1-2133506a from svr-image-2133506a'
-                sh '''
-                    docker rm -f server1-2133506a || true
-                    docker run -d --name server1-2133506a -p 32700:80 svr-image-2133506a
-                '''
-                echo 'ST2-2133506a: Server1 is successfully created'
-            }
-        }
-
-        stage('ST3-2133506a') {
-            steps {
-                echo 'ST3-2133506a: Server1 is healthy – Health check done'
-            }
-        }
-
-        stage('ST4-Parallel-2133506a') {
+        // Stage 4: Parallel Security Checks
+        stage("ST4-Parallel-${POLITE_ID}") {
             parallel {
-                stage('ST4A-2133506a') {
+                stage("ST4A-${POLITE_ID}") {
                     steps {
-                        echo 'ST4A-2133506a: SQLI Check Completed'
+                        echo "ST4A-${POLITE_ID}: SQLI Check Completed"
                     }
                 }
-                stage('ST4B-2133506a') {
+                stage("ST4B-${POLITE_ID}") {
                     steps {
-                        echo 'ST4B-2133506a: XSS Check Completed'
+                        echo "ST4B-${POLITE_ID}: XSS Check Completed"
                     }
                 }
             }
         }
 
-        stage('ST5-2133506a') {
+        // Stage 5: Manual Approval
+        stage("ST5-${POLITE_ID}") {
             steps {
                 script {
                     def userInput = input(
                         id: 'pipelineContinuePrompt',
                         message: 'Continue the pipeline?',
-                        ok: 'Proceed',
                         parameters: [
-                            choice(name: 'choice', choices: ['Proceed', 'Abort'], description: 'Select an option to continue or abort.')
+                            choice(
+                                name: 'choice',
+                                choices: ['Proceed', 'Abort'],
+                                description: 'Select an option to continue or abort.'
+                            )
                         ]
                     )
-
-                    if (userInput == 'Proceed') {
-                        echo 'ST5-2133506a: Continue the pipeline.'
-                        currentBuild.description = "User chose to proceed"
-                    } else {
-                        error 'Pipeline aborted by user selection.'
+                    if (userInput != 'Proceed') {
+                        error "Pipeline aborted by user at ST5-${POLITE_ID}."
                     }
                 }
             }
         }
 
-        stage('ST6-2133506a') {
-            when {
-                expression {
-                    // Check if user chose "Proceed" in Stage 5
-                    return currentBuild.rawBuild.getAction(org.jenkinsci.plugins.workflow.support.steps.input.InputAction)?.executions?.get(0)?.getOutcome()?.getValue() == 'Proceed'
-                }
-            }
+        // Stage 6: Finalization
+        stage("ST6-${POLITE_ID}") {
             steps {
-                echo 'ST6-2133506a: Ready for next phase'
+                echo "ST6-${POLITE_ID}: Ready for next phase"
             }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline ${currentBuild.currentResult}"
+            sh "docker rm -f ${CONTAINER_NAME} || true"  // Cleanup container
         }
     }
 }
